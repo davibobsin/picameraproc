@@ -6,6 +6,6 @@
 #ifndef __READ_VIDIOC_QUERYCAP_H__
 #define __READ_VIDIOC_QUERYCAP_H__
 
-void read_VIDIOC_QUERYCAP(int fd);
+void get_vidioc_querycap(int fd);
 
 #endif //__READ_VIDIOC_QUERYCAP_H__

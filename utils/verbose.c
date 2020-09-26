@@ -8,7 +8,7 @@
 
 int verbosity_level = 0;
 
-void read_verbosity_level(int argv,char *args[])
+void set_verbosity_level(int argv,char *args[])
 {
     int i;
 

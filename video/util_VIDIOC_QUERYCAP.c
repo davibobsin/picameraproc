@@ -98,7 +98,7 @@ void _print_table(uint32_t dev_caps)
     }
 }
 
-void read_VIDIOC_QUERYCAP(int fd)
+void get_vidioc_querycap(int fd)
 {
     int ret;
     struct v4l2_capability driver_capabilities;

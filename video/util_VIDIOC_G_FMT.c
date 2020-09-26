@@ -30,7 +30,7 @@ void _read_field(int field, char * str);
 void _read_buf_type(int buf_type, char * str);
 
 
-void read_VIDIOC_G_FMT(int fd)
+void get_vidioc_fmt(int fd)
 {
     int ret;
     struct v4l2_format format={0};
