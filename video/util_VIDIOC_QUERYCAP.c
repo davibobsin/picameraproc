@@ -98,7 +98,7 @@ void _print_table(uint32_t dev_caps)
     }
 }
 
-void get_vidioc_querycap(int fd)
+int get_vidioc_querycap(int fd)
 {
     int ret;
     struct v4l2_capability driver_capabilities;
@@ -108,7 +108,7 @@ void get_vidioc_querycap(int fd)
         if (verbosity_level > VERBOSE_QUIET)
             print_ioctl_error(errno);
         printf("ERROR on %s: ioctl returned %d",__func__,ret);
-        exit(1);
+        return 1;
     }
     else
     {
@@ -117,4 +117,5 @@ void get_vidioc_querycap(int fd)
         if (verbosity_level >= VERBOSE_DEBUG)
             _print_table(driver_capabilities.device_caps);
     }
+    return 0;
 }

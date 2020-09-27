@@ -30,7 +30,7 @@ void _read_field(int field, char * str);
 void _read_buf_type(int buf_type, char * str);
 
 
-void get_vidioc_fmt(int fd)
+int get_vidioc_fmt(int fd)
 {
     int ret;
     struct v4l2_format format={0};
@@ -40,13 +40,14 @@ void get_vidioc_fmt(int fd)
         if (verbosity_level > VERBOSE_QUIET)
             print_ioctl_error(errno);
         printf("ERROR on %s: ioctl returned %d\n",__func__,ret);
-        exit(1);
+        return 1;
     }
     else
     {
         if (verbosity_level >= VERBOSE_LOG)
             _print_fmt_info(format);
     }
+    return 0;
 }
 
 /*
