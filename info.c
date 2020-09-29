@@ -18,10 +18,10 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-#define PARAM_DEFAULT_NUM_FRAMES   100
+#define PARAM_DEFAULT_NUM_FRAMES   10
 #define PARAM_DEFAULT_NUM_BUFFERS  5
-#define PARAM_DEFAULT_HEIGHT       320
-#define PARAM_DEFAULT_WIDTH        240
+#define PARAM_DEFAULT_HEIGHT       720
+#define PARAM_DEFAULT_WIDTH        1280
 #define PARAM_DEFAULT_PIXEL_FORMAT V4L2_PIX_FMT_RGB24
 
 struct 
@@ -215,6 +215,11 @@ int capture(){
     st = et;
     fprintf(log_file,"%d: %d us\n",count,elapsed);
     count++;
+    if(count == PARAM_DEFAULT_NUM_FRAMES)
+    {
+        printf("tamanho:%d\n",buf.length);
+        write_image((unsigned char*)buffers[buf.index].addr,PARAM_DEFAULT_WIDTH,PARAM_DEFAULT_HEIGHT,3);
+    }
 
     return 0;
 }
