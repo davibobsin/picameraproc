@@ -9,6 +9,19 @@ References:
 
 #include <errno.h>
 #include <stdio.h>
+#include <sys/ioctl.h>
+
+
+int xioctl(int fh, int request, void *arg)
+{
+    int r;
+
+    do {
+        r = ioctl(fh, request, arg);
+    } while (-1 == r && EINTR == errno);
+
+    return r;
+}
 
 void print_ioctl_error(int error)
 {
