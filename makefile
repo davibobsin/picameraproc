@@ -21,4 +21,6 @@ $(TARGETS): $(OBJS) $(TARGET_OBJS)
 clean:
 	rm -rf */*.o
 	rm -rf *.o
+	rm -rf *.log
+	rm -rf *.jpg
 	rm -rf bin
