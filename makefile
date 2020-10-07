@@ -6,7 +6,7 @@ TARGET_OBJS := $(patsubst %,%.o,$(TARGETS))
 
 CFLAGS := -Wall 
 CFLAGS += -Iutils/
-CFLAGS += -Ivideo/
+CFLAGS += -Iutils/v4l2/
 CFLAGS += -Ideps/stb/
 
 LIBS := -lm
