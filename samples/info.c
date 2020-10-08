@@ -13,10 +13,6 @@
 #include "util_VIDIOC_QUERYCAP.h"
 #include "util_VIDIOC_G_FMT.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
 
 capture_context main_ctx = {0};
 
@@ -36,9 +32,7 @@ void process_image(buffer buf)
         exit(1);
     }
 
-    stbi_write_jpg(filename, PARAM_DEFAULT_WIDTH, PARAM_DEFAULT_HEIGHT, 3, img, 100);
-
-    return 0;
+    //stbi_write_jpg(filename, PARAM_DEFAULT_WIDTH, PARAM_DEFAULT_HEIGHT, 3, img, 100);
 }   
 
 int main(int argv,char *argc[])
@@ -47,7 +41,7 @@ int main(int argv,char *argc[])
     main_ctx.process = process_image;
 
     do{
-        set_verbosity_level(argv,argc);
+        if ((ret_code = set_verbosity_level(argv,argc)) != 0) break;
         if ((ret_code = open_files   (&main_ctx)) != 0) break;
         if ((ret_code = start_capture(&main_ctx)) != 0) break; 
         while(main_ctx.frame_index < PARAM_DEFAULT_NUM_FRAMES){

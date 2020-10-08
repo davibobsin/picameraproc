@@ -8,37 +8,38 @@
 #include <time.h>
 
 #include "camera_basics.h"
+#include "image_utils.h"
 #include "verbose.h"
 #include "ioctl_reader.h"
 #include "util_VIDIOC_QUERYCAP.h"
 #include "util_VIDIOC_G_FMT.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
-
 capture_context main_ctx = {0};
 
 void process_image(buffer buf)
 {
-    long elapsed = (buf.timestamp.tv_sec * 1000000) + buf.timestamp.tv_usec;
-    fprintf(main_ctx.log_file,"%d: buffer %d: %ld us\n",main_ctx.frame_index,buf.index,elapsed);
-
-    //save image
     char filename[100];
-    char * img = (char*)buf.addr;
-    sprintf(filename,"output_%ld.jpg",elapsed);
+    char * img;
+    image outimg;
+    long elapsed;
 
+    // Get info
+    elapsed = (buf.timestamp.tv_sec * 1000000) + buf.timestamp.tv_usec;
+    fprintf(main_ctx.log_file,"%d: buffer %d: %ld us\n",main_ctx.frame_index,buf.index,elapsed);
+    sprintf(filename,"output_%d.jpg",main_ctx.frame_index);
+
+    // Get image address
+    img = (char*)buf.addr;
     if(img == NULL) 
     {
         perror("Error in loading the image");
         exit(1);
     }
-
-    stbi_write_jpg(filename, PARAM_DEFAULT_WIDTH, PARAM_DEFAULT_HEIGHT, 3, img, 100);
-
-    return 0;
+    
+    read_buffer_to_image(&outimg,img,PARAM_DEFAULT_WIDTH,PARAM_DEFAULT_HEIGHT,COLORS_RGB);
+    write_image_to_jpg(filename,&outimg);
+    //free_image(&outimg);
+    //stbi_write_jpg(filename, PARAM_DEFAULT_WIDTH, PARAM_DEFAULT_HEIGHT, 3, img, 100);
 }   
 
 int main(int argv,char *argc[])
@@ -47,7 +48,7 @@ int main(int argv,char *argc[])
     main_ctx.process = process_image;
 
     do{
-        set_verbosity_level(argv,argc);
+        if ((ret_code = set_verbosity_level(argv,argc)) != 0) break;
         if ((ret_code = open_files   (&main_ctx)) != 0) break;
         if ((ret_code = start_capture(&main_ctx)) != 0) break; 
         while(main_ctx.frame_index < PARAM_DEFAULT_NUM_FRAMES){

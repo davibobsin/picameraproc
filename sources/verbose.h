@@ -14,6 +14,9 @@ enum{
     VERBOSE_DEBUG
 };
 
-void set_verbosity_level(int argv,char *args[]);
+void log_print(const char *fmt, ...);
+void log_verbose(const char *fmt, ...);
+
+int set_verbosity_level(int argv,char *args[]);
 
 #endif //__VERBOSE_H__
