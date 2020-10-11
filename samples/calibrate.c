@@ -15,15 +15,6 @@
 #include "util_VIDIOC_G_FMT.h"
 
 capture_context main_ctx = {0};
-FILE * bytesimg;
-
-
-void print_cluster(pixel_cluster cluster){
-    printf("p: %d ",cluster.x0);
-    printf("%d ",cluster.x1);
-    printf("%d ",cluster.y0);
-    printf("%d \n",cluster.y1);
-}
 
 int _first_cluster_on_mask(image mask, pixel_cluster * cluster){
     // Returns only the first cluster, but searches up to 10
@@ -141,8 +132,6 @@ int main(int argv,char *argc[])
     status_type ret_code; 
     main_ctx.process = process_image;
 
-
-    bytesimg = fopen("img.txt","w+");
     do{
         if ((ret_code = set_verbosity_level(argv,argc)) != 0) break;
         if ((ret_code = open_files   (&main_ctx)) != 0) break;
@@ -154,8 +143,6 @@ int main(int argv,char *argc[])
     }while(0);
     
     close_files(&main_ctx);
-
-    fclose(bytesimg);
 
     return ret_code;
 }
