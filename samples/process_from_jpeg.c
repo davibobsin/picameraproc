@@ -23,18 +23,20 @@ int main(int argc,char * argv[])
     uint8_t range_red[6] = {0,50,100,255,100,255};
     uint8_t range_green[6] = {30,90,100,255,100,255};
     uint8_t range_blue[6] = {0,180,50,255,50,255};
-    mask_color(processed_img,range_blue,mask);
+    mask_color(processed_img,range_green,mask);
 
     // Find Clusters
-    int box[4*10];
-    int pxs[10];
-    j = clusters(mask,pxs,box);
+    const int thresh = 50;
+    const int num_clust = 10;
+    pixel_cluster cluster[num_clust];
+
+    j = clusters(mask,cluster,thresh,num_clust);
     printf("clusters found: %d\n",j);
 
-    // Draw Squares around clusters
-    int box2[4] = {10,10,60,60};
+    // Draw green box around first cluster
     color clr = {60,255,255};
-    draw_box(processed_img,clr,box);
+    if(j>0)
+        draw_box(processed_img,cluster[0].x0,cluster[0].y0,cluster[0].x1,cluster[0].y1,clr);
 
     // Convert Image from HSV ro RGB
     convert_image(processed_img,&img);

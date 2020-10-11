@@ -59,9 +59,12 @@ typedef struct
 typedef struct
 {
     int index;
-    int qtd;
-    int box[4];
-} cluster;
+    int count;
+    int x0;
+    int x1;
+    int y0;
+    int y1;
+} pixel_cluster;
 
 // IMAGE FILES UTILS
 status read_jpg_to_image(char * filename, image * output_image);
@@ -75,11 +78,13 @@ status convert_image(image in_image,image * out_image);
 //status hsv_to_rgb(image in_image,image * out_image);
 
 // DRAWING
-status draw_box(image img,color clr,int * pts);
+status draw_circle(image img,int x,int y,int r,int w,color clr);
+status draw_filled_circle(image img,int x,int y,int r,color clr);
+status draw_box(image img,int x1,int y1,int x2,int y2,color clr);
 
 
 status mask_color(image img,uint8_t * range,image out);
-int clusters(image mask,int * px_count,int * box);
+int clusters(image mask,pixel_cluster * clusters,int cluster_qtd_min,int max_num_clusters);
 status interpolate_leds(int * qtd,int * px_count,int * box);
 
 #endif //__IMAGE_UTILS_H__

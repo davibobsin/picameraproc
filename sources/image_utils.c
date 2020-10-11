@@ -10,8 +10,6 @@
 #define GET_PX_OFF(img,x,y,offx,offy) img.data[(y+offy)*img.width*img.channels+x*img.bpp+offx]
 #define GET_PX(img,x,y) img.data[y*img.width*img.channels+x*img.channels]
 
-#define CLUSTER_QTD_MIN 50
-
 status read_jpg_to_image(char * filename, image * output_image)
 {
 	int i,width,heigth,channels;
@@ -256,24 +254,107 @@ status convert_image(image in_image,image * out_image)
     return STATUS_OK;
 }
 
-status draw_box(image img,color clr,int * pts)
-{
-    int i,c;
+int _is_inside_circle_(int x,int y,int x0,int y0,int r){
+    // ensure non negative numbers
+    int dx,dy;
+    if(x>x0)
+        dx = x-x0;
+    else
+        dx = x0-x;
 
-    for (i=pts[0];i<pts[2];i++)
-    {
-        for (c=0;c<img.channels;c++)
-        {
-            img.data[pts[1]*img.width*img.bpp+i*img.bpp+c] = clr.array[c];
-            img.data[pts[3]*img.width*img.bpp+i*img.bpp+c] = clr.array[c];
+    if(y>y0)
+        dy = y-y0;
+    else
+        dy = y0-y;
+    
+    if( (dx*dx+dy*dy) <= (r*r) )
+        return 1;
+    else
+        return 0;
+}
+
+status draw_filled_circle(image img,int x,int y,int r,color clr)
+{
+    int i,j,c;
+    int x0,x1,y0,y1;
+
+    if((x0 = x-r) < 0)
+        x0 = 0;
+    if((x1 = x+r) > img.height-1)
+        x1 = img.height-1;
+    if((y0 = y-r) < 0)
+        y0 = 0;
+    if((y1 = y+r) > img.height)
+        y1 = img.height-1;
+
+    for(i=y0;i<y1;i++){
+        for(j=x0;j<x1;j++){
+            if( _is_inside_circle_(j,i,x,y,r) ){ //checking if x²+y²<r²
+                for (c=0;c<img.channels;c++){
+                    img.data[i*img.width*img.bpp+j*img.bpp+c] = clr.array[c];
+                }
+            }
         }
     }
-    for (i=pts[1];i<pts[3];i++)
+}
+
+
+status draw_circle(image img,int x,int y,int r,int w,color clr)
+{
+    int i,j,c;
+    int x0,x1,y0,y1,r0,r1; 
+    // r0 - Internal Radius
+    // r1 - External Radius
+    // x0,y0-------|
+    //  |          |
+    //  |          |
+    //  |          |
+    //  |--------x1,y1
+
+    r1 = (w/2)+(w%2)+r;
+    r0 = 0;
+    if(w/2 < r)
+        r0 = r-(w/2);
+
+    if((x0 = x-r1) < 0)
+        x0 = 0;
+    if((x1 = x+r1) > img.width-1)
+        x1 = img.width-1;
+    if((y0 = y-r1) < 0)
+        y0 = 0;
+    if((y1 = y+r1) > img.height)
+        y1 = img.height-1;
+
+    for(i=y0;i<y1;i++){
+        for(j=x0;j<x1;j++){
+            if( _is_inside_circle_(j,i,x,y,r1) && !_is_inside_circle_(j,i,x,y,r0) ){ //checking if x²+y²<r²
+                for (c=0;c<img.channels;c++){
+                    img.data[i*img.width*img.bpp+j*img.bpp+c] = clr.array[c];
+                }
+            }
+        }
+    }
+}
+
+status draw_box(image img,int x1,int y1,int x2,int y2,color clr)
+{
+    int i,c;
+    int x,y;
+
+    for (i=x1;i<x2;i++)
     {
         for (c=0;c<img.channels;c++)
         {
-            img.data[i*img.width*img.bpp+pts[0]*img.bpp+c] = clr.array[c];
-            img.data[i*img.width*img.bpp+pts[2]*img.bpp+c] = clr.array[c];
+            img.data[y1*img.width*img.bpp+i*img.bpp+c] = clr.array[c];
+            img.data[y2*img.width*img.bpp+i*img.bpp+c] = clr.array[c];
+        }
+    }
+    for (i=y1;i<y2;i++)
+    {
+        for (c=0;c<img.channels;c++)
+        {
+            img.data[i*img.width*img.bpp+x1*img.bpp+c] = clr.array[c];
+            img.data[i*img.width*img.bpp+x2*img.bpp+c] = clr.array[c];
         }
     }
 
@@ -306,23 +387,27 @@ status mask_color(image img,uint8_t * range,image out)
     return STATUS_OK;
 }
 
-int _check_neighbors(image mask,int x,int y,int * box)
+int _check_neighbors(image mask,int x,int y,pixel_cluster * cluster)
 {
-    if (GET_PX(mask,x,y) == 1)
+    if ((x >= 0) && (y >= 0) && (x < mask.width) && (y < mask.height)) 
     {
-        if(x<box[0])
-            box[0] = x;
-        if(x>box[2])
-            box[2] = x;
-        if(y<box[1])
-            box[1] = y;
-        if(y>box[3])
-            box[3] = y;
-        GET_PX(mask,x,y) = 0;
-        return 1+_check_neighbors(mask,x  ,y-1,box)
-                +_check_neighbors(mask,x  ,y+1,box)
-                +_check_neighbors(mask,x-1,y  ,box)
-                +_check_neighbors(mask,x+1,y  ,box);
+        if((GET_PX(mask,x,y) == 1))
+        {
+            if(x<cluster->x0)
+                cluster->x0 = x;
+            if(x>cluster->x1)
+                cluster->x1 = x;
+            if(y<cluster->y0)
+                cluster->y0 = y;
+            if(y>cluster->y1)
+                cluster->y1 = y;
+            GET_PX(mask,x,y) = 0;
+            return 1+_check_neighbors(mask,x  ,y-1,cluster)
+                    +_check_neighbors(mask,x  ,y+1,cluster)
+                    +_check_neighbors(mask,x-1,y  ,cluster)
+                    +_check_neighbors(mask,x+1,y  ,cluster);
+        }
+        else return 0;
     }
     else
     {
@@ -330,33 +415,34 @@ int _check_neighbors(image mask,int x,int y,int * box)
     }
 }
 
-int clusters(image mask,int * px_count,int * box)
+int clusters(image mask,pixel_cluster * clusters,int cluster_qtd_min,int max_num_clusters)
 {
     int i,j,result,size;
     int index=0;
-    cluster results[100];
     image copy;
     
-    size = mask.width*mask.height*mask.channels;
+    size = mask.width*mask.height*mask.channels*sizeof(uint8_t);
     
     memcpy(&copy,&mask,sizeof(image));
     copy.data = (uint8_t*)malloc(size);
     memcpy(copy.data,mask.data,size);
-    
+
     for(i=0;i<copy.height;i++)
     {
         for(j=0;j<copy.width;j++)
         {
-            box[index*4+0] = copy.width;
-            box[index*4+1] = copy.height;
-            box[index*4+2] = 0;
-            box[index*4+3] = 0;
-            result = _check_neighbors(copy,i,j,&(box[index*4]));
-            if(result>CLUSTER_QTD_MIN)
+            clusters[index].x0 = copy.width;
+            clusters[index].y0 = copy.height;
+            clusters[index].x1 = 0;
+            clusters[index].y1 = 0;
+            result = _check_neighbors(copy,j,i,&(clusters[index]));
+            if(result>cluster_qtd_min)
             {
-                px_count[index] = result;
+                clusters[index].count = result;
                 index++;
             }
+            if (index >= max_num_clusters)
+                return index;
         }
     }
 

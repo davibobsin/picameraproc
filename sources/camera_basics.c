@@ -43,7 +43,7 @@ int start_capture(capture_context * cap_ctx)
         return 1;
     }
     else if(verbosity_level > VERBOSE_QUIET)
-        printf("%s: Video format set!",__func__);
+        printf("%s: Video format set!\n",__func__);
 
     // 2. Request Buffers
     struct v4l2_requestbuffers req = {0};
