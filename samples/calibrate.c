@@ -16,6 +16,12 @@
 
 capture_context main_ctx = {0};
 
+struct circle{
+    int x;
+    int y;
+    int r;
+};
+
 int _first_cluster_on_mask(image mask, pixel_cluster * cluster){
     // Returns only the first cluster, but searches up to 10
     int n_clusters,i;
@@ -32,24 +38,23 @@ int _first_cluster_on_mask(image mask, pixel_cluster * cluster){
     return 0;
 }
 
-void _draw_circle_cluster(image img,color clr,pixel_cluster cluster){
-    int r,r2,x_center,y_center;
-
-    x_center = (cluster.x0+cluster.x1)/2;
-    y_center = (cluster.y0+cluster.y1)/2;
+void _calculate_circle(pixel_cluster cluster,struct circle * out){
+    int r,r2;
+    out->x = (cluster.x0+cluster.x1)/2;
+    out->y = (cluster.y0+cluster.y1)/2;
     // Take the smallest box side (width or height) as reference
     r  = (cluster.x1-cluster.x0)/2;
     r2 = (cluster.y1-cluster.y0)/2;
     if(r2<r)
         r = r2;
-
-    draw_circle(img, x_center, y_center, r, 3, clr);
+    out->r = r;
 }
 
-void filter(image inimg){
+void filter(image inimg,capture_context main_ctx){
     char color_name[10];
     image mask_red,mask_green,mask_blue;
-    pixel_cluster cluster = {0};
+    pixel_cluster cluster;
+    struct circle led_circle;
 
     // HSV Color Values for drawing
     color color_red = {0,255,255};
@@ -71,17 +76,23 @@ void filter(image inimg){
     mask_color(inimg,range_green,mask_green);
     
     if(_first_cluster_on_mask(mask_red,&cluster)){
-        _draw_circle_cluster(inimg,color_red,cluster);
+        _calculate_circle(cluster,&led_circle);
+        draw_circle(inimg, led_circle.x, led_circle.y, led_circle.r, 3, color_red);
+        fprintf(main_ctx.log_file,"red:{x:%d,y:%d,r:%d}",led_circle.x, led_circle.y, led_circle.r);
         printf("Red led found!\n");
     }
 
-    if(_first_cluster_on_mask(mask_green,&cluster)){      
-        _draw_circle_cluster(inimg,color_red,cluster);
+    if(_first_cluster_on_mask(mask_green,&cluster)){    
+        _calculate_circle(cluster,&led_circle);
+        draw_circle(inimg, led_circle.x, led_circle.y, led_circle.r, 3, color_red);
+        fprintf(main_ctx.log_file,"green:{x:%d,y:%d,r:%d}",led_circle.x, led_circle.y, led_circle.r);
         printf("Green led found!\n");
     }
 
     if(_first_cluster_on_mask(mask_blue,&cluster)){
-        _draw_circle_cluster(inimg,color_red,cluster);
+        _calculate_circle(cluster,&led_circle);
+        draw_circle(inimg, led_circle.x, led_circle.y, led_circle.r, 3, color_red);
+        fprintf(main_ctx.log_file,"blue:{x:%d,y:%d,r:%d}",led_circle.x, led_circle.y, led_circle.r);
         printf("Blue led found!\n");
     }
 
@@ -95,13 +106,11 @@ void process_image(buffer buf)
     char filename[100];
     char * img;
     image outimg,inimg;
-    long elapsed;
+    pixel_cluster cluster[3] = {{0},{0},{0}};
     int i,j;
     int x,y,r1,r2;
 
     // Get info, log and create output name
-    elapsed = (buf.timestamp.tv_sec * 1000000) + buf.timestamp.tv_usec;
-    fprintf(main_ctx.log_file,"%d: buffer %d: %ld us\n",main_ctx.frame_index,buf.index,elapsed);
     sprintf(filename,"output_%d.jpg",main_ctx.frame_index);
 
     // Get image address
@@ -118,7 +127,9 @@ void process_image(buffer buf)
     // Convert Image from RGB to HSV
     convert_image(inimg,&outimg);
     
-    filter(outimg);
+    fprintf(main_ctx.log_file,"%d: buffer %d: ",main_ctx.frame_index,buf.index);
+    filter(outimg,main_ctx);
+    fprintf(main_ctx.log_file,"\n");
 
     // Convert Image from HSV ro RGB
     convert_image(outimg,&inimg);
