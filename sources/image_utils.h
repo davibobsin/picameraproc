@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define MAX_ELEMENTS_LOOK_UP_TABLE 2000
+
 typedef enum
 {
     STATUS_OK,
@@ -66,6 +68,11 @@ typedef struct
     int y1;
 } pixel_cluster;
 
+struct look_up_table{
+    int indexes[MAX_ELEMENTS_LOOK_UP_TABLE];
+    int length;
+};
+
 // IMAGE FILES UTILS
 status read_jpg_to_image(char * filename, image * output_image);
 status write_image_to_jpg(char * filename, image * input_image);
@@ -87,4 +94,9 @@ status mask_color(image img,uint8_t * range,image out);
 int clusters(image mask,pixel_cluster * clusters,int cluster_qtd_min,int max_num_clusters);
 status interpolate_leds(int * qtd,int * px_count,int * box);
 
+// LOOK UP TABLES
+status create_circle_look_up_table(image img,int x,int y,int r,struct look_up_table * lookuptable);
+status evaluate_lookup_table(image img,struct look_up_table lookuptable,float * means,uint8_t * max,uint8_t * min);
+
 #endif //__IMAGE_UTILS_H__
+

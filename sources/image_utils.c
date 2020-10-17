@@ -273,6 +273,73 @@ int _is_inside_circle_(int x,int y,int x0,int y0,int r){
         return 0;
 }
 
+
+status create_circle_look_up_table(image img,int x,int y,int r,struct look_up_table * lookuptable)
+{
+    int dx,dy;
+    int x0,x1,y0,y1;
+
+    if((x0 = x-r) < 0)
+        x0 = 0;
+    if((x1 = x+r) > img.width-1)
+        x1 = img.width-1;
+    if((y0 = y-r) < 0)
+        y0 = 0;
+    if((y1 = y+r) > img.height-1)
+        y1 = img.height-1;
+
+    lookuptable->length = 0;
+    
+    for(dy=y0;dy<y1;dy++){
+        for(dx=x0;dx<x1;dx++){
+            if( _is_inside_circle_(dx,dy,x,y,r) ){ //checking if x²+y²<r²
+                lookuptable->indexes[lookuptable->length]=dy*img.width*img.bpp+dx*img.bpp;
+                lookuptable->length++;
+            }
+        }
+    }
+    return STATUS_OK;
+}
+
+status evaluate_lookup_table(image img,struct look_up_table lookuptable,float * means,uint8_t * max,uint8_t * min){
+    int i,channel;
+    color pixel_rgb,pixel_hsv;
+    
+    // Initialize means
+    for(channel=0;channel<img.channels;channel++){
+        means[channel] = 0;
+        max[channel] = 0;
+    }
+
+    // Scan all lookup table
+    for(i=0;i<lookuptable.length;i++){
+        pixel_rgb.r = img.data[lookuptable.indexes[i]];
+        pixel_rgb.g = img.data[lookuptable.indexes[i]+1];
+        pixel_rgb.b = img.data[lookuptable.indexes[i]+2];
+        _pixel_rgb_to_hsv(pixel_rgb,&pixel_hsv);
+        means[0] += pixel_hsv.h;
+        means[1] += pixel_hsv.s;
+        means[2] += pixel_hsv.v;
+        if(pixel_hsv.v>max[2] || i==0){
+            max[2] = pixel_hsv.v;
+            max[1] = pixel_hsv.s;
+            max[0] = pixel_hsv.h;
+	    }
+        
+        if(pixel_hsv.v<min[2] || i==0){
+            min[2] = pixel_hsv.v;
+            min[1] = pixel_hsv.s;
+            min[0] = pixel_hsv.h;
+	    }
+    }
+
+    // Calculate Means
+    for(channel=0;channel<img.channels;channel++)
+        means[channel] /= ((float)lookuptable.length);
+
+    return STATUS_OK;
+}
+
 status draw_filled_circle(image img,int x,int y,int r,color clr)
 {
     int i,j,c;
@@ -280,11 +347,11 @@ status draw_filled_circle(image img,int x,int y,int r,color clr)
 
     if((x0 = x-r) < 0)
         x0 = 0;
-    if((x1 = x+r) > img.height-1)
-        x1 = img.height-1;
+    if((x1 = x+r) > img.width-1)
+        x1 = img.width-1;
     if((y0 = y-r) < 0)
         y0 = 0;
-    if((y1 = y+r) > img.height)
+    if((y1 = y+r) > img.height-1)
         y1 = img.height-1;
 
     for(i=y0;i<y1;i++){
@@ -296,6 +363,7 @@ status draw_filled_circle(image img,int x,int y,int r,color clr)
             }
         }
     }
+    return STATUS_OK;
 }
 
 
@@ -322,7 +390,7 @@ status draw_circle(image img,int x,int y,int r,int w,color clr)
         x1 = img.width-1;
     if((y0 = y-r1) < 0)
         y0 = 0;
-    if((y1 = y+r1) > img.height)
+    if((y1 = y+r1) > img.height-1)
         y1 = img.height-1;
 
     for(i=y0;i<y1;i++){
@@ -334,6 +402,7 @@ status draw_circle(image img,int x,int y,int r,int w,color clr)
             }
         }
     }
+    return STATUS_OK;
 }
 
 status draw_box(image img,int x1,int y1,int x2,int y2,color clr)
