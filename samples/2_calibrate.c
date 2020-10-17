@@ -63,7 +63,7 @@ void filter(image inimg,capture_context main_ctx){
 
     // Ranges for filters
     uint8_t range_red[6] = {150,180,100,255,100,255};
-    uint8_t range_green[6] = {30,90,100,255,100,255};
+    uint8_t range_green[6] = {30,90,20,255,20,255};
     uint8_t range_blue[6] = {70,160,100,255,100,255};
 
     // Creates auxiliar image to be used as mask
